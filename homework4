@@ -1,0 +1,125 @@
+Econometrics - Homework #4
+
+09.22.2025
+1) Group Members:
+•	Federico Ciandri,
+•	Heidey Collado, 
+•	Nasrin
+•	Ege Yanik
+
+#R Codes Inputs:
+
+library(tidyverse)
+library(ggplot2)
+getwd()
+setwd("/Users/federicociandri/Desktop/Econometrics")
+load("Rdata/d_HHP2020_24.RData")
+summary(d_HHP2020_24$income_midpoint)
+summary(d_HHP2020_24$income_midpoint_factor)
+
+library(dplyr)
+d_HHP2020_24 %>%
+  group_by(Mar_Stat) %>%
+  summarise(mean_income = mean(income_midpoint, na.rm = TRUE)) %>%
+  ggplot(aes(x = Mar_Stat, y = mean_income, fill = Mar_Stat)) +
+  geom_col() +
+  labs(title = "Average Income by Marital Status",
+       x = "Marital Status", y = "Average Income (midpoint)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+library(dplyr)
+d_HHP2020_24 %>%
+  group_by(Region, Mar_Stat) %>%
+  summarise(mean_income = mean(income_midpoint, na.rm = TRUE)) %>%
+  ggplot(aes(x = Mar_Stat, y = mean_income, fill = Region)) +
+  geom_col(position = position_dodge()) +
+  labs(title = "Average Income by Marital Status and Region",
+       x = "Marital Status", y = "Average Income (midpoint)") +
+  theme_minimal()
+library(dplyr)
+library(ggplot2)
+library(scales)  # for comma formatting
+d_HHP2020_24 %>%
+  group_by(Region, Mar_Stat) %>%
+  summarise(mean_income = mean(income_midpoint, na.rm = TRUE)) %>%
+  ggplot(aes(x = Mar_Stat, y = mean_income, fill = Region)) +
+  geom_col(position = position_dodge()) +
+  labs(title = "Average Income by Marital Status and Region",
+       x = "Marital Status", y = "Average Income (midpoint)") +
+  scale_y_continuous(labels = comma) +   # :point_left: This fixes the axis
+  theme_minimal()
+library(dplyr)
+library(ggplot2)
+library(scales)
+d_HHP2020_24 %>%
+  mutate(income_adjusted = ifelse(Mar_Stat == "Married", income_midpoint / 2, income_midpoint)) %>%
+  group_by(Region, Mar_Stat) %>%
+  summarise(mean_income = mean(income_adjusted, na.rm = TRUE)) %>%
+  ggplot(aes(x = Mar_Stat, y = mean_income, fill = Region)) +
+  geom_col(position = position_dodge()) +
+  labs(title = "Adjusted Average Income by Marital Status and Region",
+       x = "Marital Status", y = "Average Adjusted Income (midpoint)") +
+  scale_y_continuous(labels = comma) +
+  theme_minimal()
+library(dplyr)
+library(ggplot2)
+library(scales)
+# Create adjusted income (divide by 2 for Married)
+d_HHP2020_24 <- d_HHP2020_24 %>%
+  mutate(income_adjusted = ifelse(Mar_Stat == "Married", income_midpoint / 2, income_midpoint))
+# Summarize average adjusted income by Region & Marital Status
+avg_data <- d_HHP2020_24 %>%
+  group_by(Region, Mar_Stat) %>%
+  summarise(mean_income = mean(income_adjusted, na.rm = TRUE))
+# Plot like the scatter you shared, but with new variables
+ggplot(avg_data, aes(x = Mar_Stat, y = mean_income, color = Region)) +
+  geom_point(size = 3, alpha = 0.8) +
+  labs(title = "Average Adjusted Income by Marital Status and Region",
+       x = "Marital Status",
+       y = "Average Adjusted Income") +
+  scale_y_continuous(labels = comma) +
+  theme_minimal() +
+  theme(legend.position = "right")
+library(dplyr)
+library(ggplot2)
+library(scales)
+# Adjust income: divide married income by 2
+d_HHP2020_24 <- d_HHP2020_24 %>%
+  mutate(income_adjusted = ifelse(Mar_Stat == "Married", income_midpoint / 2, income_midpoint))
+# Get average adjusted income by State, Region, and Marital Status
+avg_data <- d_HHP2020_24 %>%
+  group_by(Region, State, Mar_Stat) %>%
+  summarise(mean_income = mean(income_adjusted, na.rm = TRUE), .groups = "drop")
+# Select top 4 states per Region (based on overall average income across marital status)
+top_states <- avg_data %>%
+  group_by(Region, State) %>%
+  summarise(overall_mean = mean(mean_income, na.rm = TRUE), .groups = "drop") %>%
+  arrange(Region, desc(overall_mean)) %>%
+  group_by(Region) %>%
+  slice_head(n = 4) %>%
+  pull(State)
+# Keep only those states
+avg_top4 <- avg_data %>%
+  filter(State %in% top_states)
+# Plot
+ggplot(avg_top4, aes(x = Mar_Stat, y = mean_income, color = State)) +
+  geom_point(size = 3, alpha = 0.8) +
+  facet_wrap(~ Region, scales = "free_y") +
+  labs(title = "Average Adjusted Income by Marital Status (Top 4 States per Region)",
+       x = "Marital Status", y = "Average Adjusted Income") +
+  scale_y_continuous(labels = comma) +
+  theme_minimal()
+
+ggplot(avg_top4, aes(x = Mar_Stat, y = mean_income, color = State, group = State)) +
+  geom_line(size = 1) +
+  geom_point(size = 3, alpha = 0.8) +
+  facet_wrap(~ Region, scales = "free_y") +
+  labs(title = "Average Adjusted Income by Marital Status (Top 4 States per Region)",
+       x = "Marital Status", y = "Average Adjusted Income") +
+  scale_y_continuous(labels = comma) +
+  theme_minimal()
+
+#Conclusion:
+The graph shows that adjusted income differs by marital status and region. 
+Married individuals report lower adjusted incomes (since household income is split), while singles and others are higher. 
+Regional differences are strong, with certain states driving up averages, showing that location often matters more than marital status in income variation.
